@@ -74,7 +74,7 @@ struct tm* currentDateTime();
 void RegisterParticipant(Participant participants[]);
 Participant* ViewParticipant(const int id);
 void DisplayParticipant(Participant * participant);
-void DisplayIndividualEventWinners(Participant participants[],int eventId);
+void DisplayIndividualEventWinners(Participant participants[], int eventId);
 void DisplayAllRoundEventWinners(Participant participants[]);
 void DisplayOverallWinners(Participant participants[]);
 float AverageScores(Participant *participant);
@@ -189,14 +189,14 @@ void Menu()
 			printf("\nEntering Score for Participant Number: \n> ");
 			scanf("%d", &participantID);
 			participant = ViewParticipant(participantID);
-		
-			
+
+
 			for (int i = 1; i < 6; i++)
 			{
 				printf("\nEntering Judge #%d Score : \n> ", i);
 				scanf("%f", &judgeScore);
 				JudgeScore score = { i,participant->registeredEvents[0].id, judgeScore };
-				AcceptJudgesScore(participant, score , i, participant->registeredEvents[0].id);
+				AcceptJudgesScore(participant, score, i, participant->registeredEvents[0].id);
 			}
 
 			DisplayParticipant(participant);
@@ -214,7 +214,7 @@ void Menu()
 			participant = ViewParticipant(participantID);
 			printf("\nEntering Score for Event Number: \n> ");
 			scanf("%d", &eventId);
-			
+
 
 			for (int i = 0; i < 5; i++)
 			{
@@ -341,7 +341,7 @@ void RegisterParticipant(Participant participants[])
 
 			printf("\nParticipant ID : %d - %s %s was successfully registered.\n", participants[i].id, participants[i].firstName, participants[i].lastName);
 
-			
+
 		}
 	}
 	else {
@@ -382,10 +382,10 @@ void SaveAll(Participant * participants)
 	Participant * participant = NULL;
 	for (int i = 0; i < currentlyRegistered; i++)
 	{
-		
-			participant = &participants[i];
 
-			CreateAndSaveCSV("Participants.csv", participant);
+		participant = &participants[i];
+
+		CreateAndSaveCSV("Participants.csv", participant);
 	}
 
 	participant = NULL;
@@ -443,22 +443,23 @@ void DisplayParticipant(Participant * participant)
 		participant->averageScore);
 }
 
-void DisplayIndividualEventWinners(Participant participants[], int eventId)
+void DisplayIndividualEventWinners(Participant participants[], int eventId, Gender gender)
 {
 	float first, second, third;
-	Participant * p1, * p2, *p3;
-	Participant initial = {
-	0,
-	"",
-	"",
-{0,0,0},
-	"",
-	NULL,
-{0,"",{0, ""} },
-{{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f}},
-	0.0f,
-	ALLROUND,
-{{0, ""},{0, ""},{0, ""},{0, ""},{0, ""},{0, ""}},
+	Participant winners[3];
+	Participant initial = 
+	{
+		0,
+		"",
+		"",
+		{0,0,0},
+		"",
+		NULL,
+		{0,"",{0, ""} },
+		{{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f}},
+		0.0f,
+		ALLROUND,
+		{{0, ""},{0, ""},{0, ""},{0, ""},{0, ""},{0, ""}},
 	};
 
 	if (currentlyRegistered < 3)
@@ -466,15 +467,15 @@ void DisplayIndividualEventWinners(Participant participants[], int eventId)
 		printf("\n Not enough registered participants");
 		return;
 	}
-	
+
 	first = second = third = FLT_MIN;
-	p1 = p2 = p3 = &initial;
+	winners[0] = winners[1] = winners[2] = initial;
 
 	for (int i = 0; i < currentlyRegistered; i++)
 	{
 		// if current element is greater than first 
 
-		if (participants[i].averageScore > first 
+		if (participants[i].averageScore > first
 			//&& participants[i].registeredEvents[0].id == eventId
 			)
 		{
@@ -482,31 +483,35 @@ void DisplayIndividualEventWinners(Participant participants[], int eventId)
 			second = first;
 			first = participants[i].averageScore;
 
-			p3 = p2;
-			p2 = p1;
-			p1 = &participants[i];
+			winners[2] = winners[1];
+			winners[1] = winners[0];
+			winners[0] = participants[i];
 
 		}
-		else if (participants[i].averageScore > second 
+		else if (participants[i].averageScore > second
 			// && participants[i].registeredEvents[0].id == eventId
 			) {
 			// if arr[i] is in between first and second then update second
 			third = second;
 			second = participants[i].averageScore;
 
-			p3 = p2;
-			p2 = &participants[i];
+			winners[2] = winners[1];
+			winners[1] = participants[i];
 		}
-		else if (participants[i].registeredEvents[0].id == eventId)
+		else 
+			//if (participants[i].registeredEvents[0].id == eventId)
 		{
 			third = participants[i].averageScore;
-			p3 = &participants[i];
+			winners[2] = participants[i];
 		}
 
-		printf("\nIndividual Winners For Event ");
-
+		printf("\nIndividual Winners For Individual");
+		for (int i = 0; i < 3; i++)
+		{
+			DisplayParticipant(&winners[i]);
+		}
 	}
-	
+
 }
 
 void DisplayAllRoundEventWinners(Participant participants[])
