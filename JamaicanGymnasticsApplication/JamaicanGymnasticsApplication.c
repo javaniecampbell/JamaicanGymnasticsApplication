@@ -11,6 +11,8 @@
 
 #define SIZE 100
 #define STRINGLENGTH 100
+#define MALE_EVENTS_SIZE 6
+#define FEMALE_EVENTS_SIZE 4
  //typedef enum { false, true} bool;
 typedef enum Genders {
 	MALE,
@@ -59,7 +61,7 @@ typedef struct Participants
 	char age[STRINGLENGTH];
 	Gender *gender;
 	School school;
-	JudgeScore scores[5];
+	JudgeScore scores[6][5];
 	float averageScore;
 	CompetitionType competitionType;
 	Event registeredEvents[6];
@@ -88,7 +90,7 @@ void SaveAll(Participant *participants);
 int currentlyRegistered = 0;
 Participant participants[SIZE];
 
-Event MaleEvents[6] = {
+Event MaleEvents[MALE_EVENTS_SIZE] = {
 	{1,"floor exercise"},
 	{2,"parallel bars"},
 	{3,"pommel horse"},
@@ -97,7 +99,7 @@ Event MaleEvents[6] = {
 	{6, "uneven bars" }
 };
 
-Event FemaleEvents[4] = {
+Event FemaleEvents[FEMALE_EVENTS_SIZE] = {
 	{1,"vault"},
 	{2, "uneven bars" },
 	{3,"balance beam"},
@@ -114,7 +116,14 @@ int main()
 		"",
 		NULL,
 	{0,"",{0, ""} },
-	{{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f}},
+	{
+		{{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f}},
+		{{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f}},
+		{{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f}},
+		{{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f}},
+		{{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f}},
+		{{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f},{0,0,0.0f}}
+	},
 		0.0f,
 		ALLROUND,
 	{{0, ""},{0, ""},{0, ""},{0, ""},{0, ""},{0, ""}},
@@ -158,6 +167,7 @@ void Menu()
 {
 
 	int option = 0, participantID = 0;
+			
 
 	printf("Welcome to Jamaican Gynastics Application\n");
 	printf("\n(1) Register Participant");
@@ -175,6 +185,9 @@ void Menu()
 	Participant *participant = NULL;
 	while (option != 0)
 	{
+		char gender[6];
+		int eventSelected = -1;
+		Gender *genderChosen = NULL;
 		switch (option)
 		{
 		case 1:
@@ -190,6 +203,13 @@ void Menu()
 			printf("\nEntering Score for Participant Number: \n> ");
 			scanf("%d", &participantID);
 			participant = ViewParticipant(participantID);
+
+			if (participant == NULL) {
+				printf("\nNo Participant found with id: %d\n", participantID);
+				system("pause");
+				break;
+
+			}
 
 
 			for (int i = 1; i < 6; i++)
@@ -207,24 +227,63 @@ void Menu()
 		case 3:
 			fflush(stdin);
 			participantID = 0;
-			int eventId = 0;
+			int eventId = -1;
 			system("cls");
 			printf("(3) Add Judges Score for All-Round Event\n");
 			printf("\nEntering Score for Participant Number: \n> ");
 			scanf("%d", &participantID);
 			participant = ViewParticipant(participantID);
-			printf("\nEntering Score for Event Number: \n> ");
-			scanf("%d", &eventId);
 
+			if (participant == NULL) {
+				printf("\nNo Participant found with id: %d\n", participantID);
+				system("pause");
+				break;
 
-			for (int i = 0; i < 5; i++)
-			{
-				AcceptJudgesScore(participant, participant->scores[i], i, eventId);
 			}
 
-			//participant->averageScore = AverageScores(participant);
+			if (participant->gender == NULL) {
+				printf("\nPlease specify a gender and try again!\n");
+				system("pause");
+				break;
+			}
+
+
+			printf("\nEnter Score for Event Number: \n> ");
+			//scanf("%d", &eventId);
+
+			printf("\nSelect from the list of events :\n");
+			if (*participant->gender == FEMALE)
+				for (int i = 0; i < FEMALE_EVENTS_SIZE; i++)
+				{
+					printf("\n(%d)%20.20s", i, FemaleEvents[i].eventName);
+				}
+			else
+				for (int i = 0; i < MALE_EVENTS_SIZE; i++)
+				{
+					printf("\n(%d)%20.20s", i, MaleEvents[i].eventName);
+				}
+			printf("\n> ");
+
+			scanf("%d", &eventId);
+
+			if (eventId < 0 || eventId > 6) {
+				printf("\nInvalid event id, Please try again.");
+				system("pause");
+				break;
+			}
+
+
+			for (int i = 1; i < 6; i++)
+			{
+				printf("\nEntering Judge #%d Score : \n> ", i);
+				scanf("%f", &judgeScore);
+				JudgeScore score = { i,participant->registeredEvents[0].id, judgeScore };
+				AcceptJudgesScore(participant, score, i, participant->registeredEvents[eventId].id);
+			}
 
 			DisplayParticipant(participant);
+			eventId = -1;
+			participantID = 0;
 			system("pause");
 			break;
 		case 4:
@@ -236,6 +295,7 @@ void Menu()
 			scanf("%d", &participantID);
 			participant = ViewParticipant(participantID);
 			DisplayParticipant(participant);
+			participantID = 0;
 			system("pause");
 			break;
 		case 5:
@@ -243,19 +303,100 @@ void Menu()
 			system("cls");
 			printf("(5) View Individual Event Winners\n");
 
+
+			printf("\nEnter Participant's Gender: \n> (m) Male | (f) Female : ");
+			scanf("%s", gender);
+			
+			genderChosen = ((strcmp(gender, "m") == 0) || (strcmp(gender, "male") == 0) || (strcmp(gender, "MALE") == 0)) ? (Gender*)MALE : ((strcmp(gender, "f") == 0) || (strcmp(gender, "female") == 0) || (strcmp(gender, "FEMALE") == 0)) ? (Gender*)FEMALE : NULL;
+			if (genderChosen != NULL) {
+
+				switch (*genderChosen)
+				{
+				case MALE:
+					fflush(stdin);
+					printf("\nSelect from the list of events for winners:\n");
+					for (int i = 0; i < MALE_EVENTS_SIZE; i++)
+					{
+						printf("\n(%d)%20.20s", i, MaleEvents[i].eventName);
+					}
+					printf("\n> ");
+
+					scanf("%d", &eventSelected);
+					DisplayIndividualEventWinners(participants, eventSelected, genderChosen);
+					eventSelected = -1;
+					break;
+				case FEMALE:
+					fflush(stdin);
+					printf("\nSelect from the list of events for winners:\n");
+					for (int i = 0; i < FEMALE_EVENTS_SIZE; i++)
+					{
+						printf("\n(%d)%20.20s", i, FemaleEvents[i].eventName);
+					}
+					printf("\n> ");
+
+					scanf("%d", &eventSelected);
+					DisplayIndividualEventWinners(participants, eventSelected, genderChosen);
+					eventSelected = -1;
+					break;
+				}
+			}
+			else {
+				printf("\n Invalid Gender Selected, Please Try again!!\n");
+			}
+
+			eventSelected = -1;
 			system("pause");
 			break;
 		case 6:
 			fflush(stdin);
 			system("cls");
 			printf("(6) View All-Round Event Winners\n");
+			printf("\nEnter Participant's Gender: \n> (m) Male | (f) Female : ");
+			scanf("%s", gender);
+			eventSelected = -1;
+			genderChosen = ((strcmp(gender, "m") == 0) || (strcmp(gender, "male") == 0) || (strcmp(gender, "MALE") == 0)) ? (Gender*)MALE : ((strcmp(gender, "f") == 0) || (strcmp(gender, "female") == 0) || (strcmp(gender, "FEMALE") == 0)) ? (Gender*)FEMALE : NULL;
+			if (genderChosen != NULL) {
 
+				switch (*genderChosen)
+				{
+				case MALE:
+					fflush(stdin);
+					printf("\nSelect from the list of events for winners:\n");
+					for (int i = 0; i < MALE_EVENTS_SIZE; i++)
+					{
+						printf("\n(%d)%20.20s", i, MaleEvents[i].eventName);
+					}
+					printf("\n> ");
+
+					scanf("%d", &eventSelected);
+					DisplayAllRoundEventWinners(participants, eventSelected, genderChosen);
+					eventSelected = -1;
+					break;
+				case FEMALE:
+					fflush(stdin);
+					printf("\nSelect from the list of events for winners:\n");
+					for (int i = 0; i < FEMALE_EVENTS_SIZE; i++)
+					{
+						printf("\n(%d)%20.20s", i, FemaleEvents[i].eventName);
+					}
+					printf("\n> ");
+
+					scanf("%d", &eventSelected);
+					DisplayAllRoundEventWinners(participants, eventSelected, genderChosen);
+					eventSelected = -1;
+					break;
+				}
+			}
+			else {
+				printf("\n Invalid Gender Selected, Please Try again!!\n");
+			}
 			system("pause");
 			break;
 
 		case 7:
 			system("cls");
 			printf("(7) View Overall Report\n");
+			DisplayOverallWinners(participants);
 			system("pause");
 			break;
 		case 8:
@@ -425,23 +566,58 @@ void DisplayParticipant(Participant * participant)
 {
 	if (participant == NULL) return;
 
-	printf("ID:\t\t%d\nFull Name:%-20.20s %s\nSchool:%-20.20s\nCountry:%-20.20s\n,DOB:\t\t%d-%d-%d\nGender:%-20.20s\nEvent:%-20.20s\nJudge 1 Score:\t%f\nJudge 2 Score:\t%f\nJudge 3 Score:\t%f\nJudge 4 Score:\t%f\nJudge 5 Score:\t%f\nAverage Score:\t%f\n\n",
-		participant->id,
-		participant->firstName,
-		participant->lastName,
-		participant->school.name,
-		participant->school.country.name,
-		participant->dateOfBirth.day,
-		participant->dateOfBirth.month,
-		participant->dateOfBirth.year,
-		*participant->gender == MALE ? "Male" : "Female",
-		participant->competitionType == INDIVIDUAL ? strcat("INDIVIDUAL: ", participant->registeredEvents[0].eventName) : "",
-		participant->scores[0].score,
-		participant->scores[1].score,
-		participant->scores[2].score,
-		participant->scores[3].score,
-		participant->scores[4].score,
-		participant->averageScore);
+	if (participant->competitionType == INDIVIDUAL) {
+
+		printf("ID:\t\t%d\nFull Name:%-20.20s %s\nSchool:%-20.20s\nCountry:%-20.20s\n,DOB:\t\t%d-%d-%d\nGender:%-20.20s\nEvent:%-20.20s\nJudge 1 Score:\t%f\nJudge 2 Score:\t%f\nJudge 3 Score:\t%f\nJudge 4 Score:\t%f\nJudge 5 Score:\t%f\nAverage Score:\t%f\n\n",
+			participant->id,
+			participant->firstName,
+			participant->lastName,
+			participant->school.name,
+			participant->school.country.name,
+			participant->dateOfBirth.day,
+			participant->dateOfBirth.month,
+			participant->dateOfBirth.year,
+			*participant->gender == MALE ? "Male" : "Female",
+			participant->competitionType == INDIVIDUAL ? strcat("INDIVIDUAL: ", participant->registeredEvents[0].eventName) : "",
+			participant->scores[0][0].score,
+			participant->scores[0][1].score,
+			participant->scores[0][2].score,
+			participant->scores[0][3].score,
+			participant->scores[0][4].score,
+			participant->averageScore);
+	}
+	else
+	{
+		printf("ID:\t\t%d\nFull Name:%-20.20s %s\nSchool:%-20.20s\nCountry:%-20.20s\n,DOB:\t\t%d-%d-%d\nGender:%-20.20s\n",
+			participant->id,
+			participant->firstName,
+			participant->lastName,
+			participant->school.name,
+			participant->school.country.name,
+			participant->dateOfBirth.day,
+			participant->dateOfBirth.month,
+			participant->dateOfBirth.year,
+			*participant->gender == MALE ? "Male" : "Female");
+
+		if (participant->competitionType == ALLROUND) {
+			int limit = (participant->gender != NULL) ? (*participant->gender == MALE ? MALE_EVENTS_SIZE : FEMALE_EVENTS_SIZE) : 0;
+			for (int i = 0; i < limit; i++)
+			{
+				printf("Event:%-20.20s\nJudge 1 Score:\t%f\nJudge 2 Score:\t%f\nJudge 3 Score:\t%f\nJudge 4 Score:\t%f\nJudge 5 Score:\t%f\n",
+					participant->competitionType == INDIVIDUAL ? strcat("INDIVIDUAL: ", participant->registeredEvents[0].eventName) : strcat("ALL-ROUND: ", participant->registeredEvents[i].eventName),
+					participant->scores[i][0].score,
+					participant->scores[i][1].score,
+					participant->scores[i][3].score,
+					participant->scores[i][4].score,
+					participant->scores[i][5].score);
+			}
+
+			printf("\nAverage Score:\t%f\n\n",
+				participant->averageScore);
+
+		}
+
+	}
 }
 
 void DisplayWinners(Participant participants[], int eventId, Gender *gender, CompetitionType competiton)
@@ -476,9 +652,9 @@ void DisplayWinners(Participant participants[], int eventId, Gender *gender, Com
 	{
 		// if current element is greater than first 
 
-		if (participants[i].averageScore > first
-			&& participants[i].competitionType == competiton
-			//&& participants[i].registeredEvents[0].id == eventId
+		if ((participants[i].averageScore > first && participants[i].competitionType == competiton)
+			|| participants[i].registeredEvents[0].id == eventId
+			|| participants[i].gender == gender
 			)
 		{
 			third = second;
@@ -490,9 +666,9 @@ void DisplayWinners(Participant participants[], int eventId, Gender *gender, Com
 			winners[0] = participants[i];
 
 		}
-		else if (participants[i].averageScore > second
-			 && participants[i].competitionType == competiton
-			// && participants[i].registeredEvents[0].id == eventId
+		else if ((participants[i].averageScore > second && participants[i].competitionType == competiton)
+			|| participants[i].registeredEvents[0].id == eventId
+			|| participants[i].gender == gender
 			) {
 			// if arr[i] is in between first and second then update second
 			third = second;
@@ -502,7 +678,8 @@ void DisplayWinners(Participant participants[], int eventId, Gender *gender, Com
 			winners[1] = participants[i];
 		}
 		else if (participants[i].competitionType == competiton
-			////&& participants[i].registeredEvents[0].id == eventId
+			|| participants[i].registeredEvents[0].id == eventId
+			|| participants[i].gender == gender
 			)
 		{
 			third = participants[i].averageScore;
@@ -520,19 +697,14 @@ void DisplayIndividualEventWinners(Participant participants[], int eventId, Gend
 {
 
 	printf("\nIndividual Winners For Individual");
-	DisplayWinners(participants, eventId, NULL, INDIVIDUAL);
+	DisplayWinners(participants, eventId, gender, INDIVIDUAL);
 
 }
 
 void DisplayAllRoundEventWinners(Participant participants[], int eventId, Gender *gender)
 {
-	
-
-		printf("\nIndividual Winners For All-Round");
-		
-		DisplayWinners(participants, 0, NULL, ALLROUND);
-		
-	
+	printf("\nIndividual Winners For All-Round");
+	DisplayWinners(participants, eventId, gender, ALLROUND);
 }
 
 void DisplayOverallWinners(Participant participants[])
@@ -592,7 +764,7 @@ void DisplayOverallWinners(Participant participants[])
 			winners[2] = winners[1];
 			winners[1] = participants[i];
 		}
-		else 
+		else
 			//if (participants[i].competitionType == INDIVIDUAL
 			////&& participants[i].registeredEvents[0].id == eventId
 			//)
@@ -613,16 +785,39 @@ float AverageScores(Participant *participant)
 {
 	float sum = 0;
 	int length = 5;
-	for (int i = 0; i < length; i++)
-	{
-		sum += participant->scores[i].score;
+	float average = 0.0f;
+	if (participant->competitionType == ALLROUND) {
+		int limit = (participant->gender != NULL) ? (*participant->gender == MALE ? MALE_EVENTS_SIZE : FEMALE_EVENTS_SIZE) : MALE_EVENTS_SIZE;
+		for (int i = 0; i < limit; i++)
+		{
+			for (int j = 0; i < length; i++)
+			{
+
+				sum += participant->scores[i][j].score;
+			}
+
+		}
+		average = average = (float)(sum / (limit * length));
+	}
+	else {
+
+		for (int i = 0; i < length; i++)
+		{
+
+			sum += participant->scores[0][i].score;
+		}
+		average = (float)(sum / length);
 	}
 
-	return (float)(sum / length);
+	return average;
 }
 
 void AcceptJudgesScore(Participant *participant, JudgeScore score, int judgeId, int eventId)
 {
+	if (participant != NULL) {
+		printf("\n No participant found\n");
+		return;
+	}
 	if (score.score < 0.0f && score.score > 10.0f) {
 		return;
 	}
@@ -639,14 +834,36 @@ void AcceptJudgesScore(Participant *participant, JudgeScore score, int judgeId, 
 	// Accept score for specific event & Judge
 
 	int length = 5;
+	if (participant->competitionType == INDIVIDUAL) {
 
-	for (int i = 0; i < length; i++)
-	{
-		int index = (judgeId - 1);
-		if (i == index) {
-			participant->scores[i].id = judgeId;
-			participant->scores[i].eventId = eventId;
-			participant->scores[i].score = score.score;
+		for (int i = 0; i < length; i++)
+		{
+			int index = (judgeId - 1);
+			if (i == index) {
+				participant->scores[0][i].id = judgeId;
+				participant->scores[0][i].eventId = eventId;
+				participant->scores[0][i].score = score.score;
+				break;
+			}
+		}
+	}
+	else {
+		int limit = (participant->gender != NULL) ? (*participant->gender == MALE ? MALE_EVENTS_SIZE : FEMALE_EVENTS_SIZE) : MALE_EVENTS_SIZE;
+		for (int i = 0; i < limit; i++)
+		{
+			if (i == (eventId)) {
+				for (int j = 0; i < length; i++)
+				{
+					int index = (judgeId - 1);
+					if (j == index) {
+						participant->scores[i][j].id = judgeId;
+						participant->scores[i][j].eventId = eventId;
+						participant->scores[i][j].score = score.score;
+						break;
+					}
+				}
+
+			}
 		}
 	}
 }
@@ -681,11 +898,11 @@ void CreateAndSaveCSV(const char *filename, Participant *participant)
 			participant->dateOfBirth.year,
 			(int)participant->gender,
 			participant->competitionType == INDIVIDUAL ? strcat("INDIVIDUAL: ", participant->registeredEvents[0].eventName) : "",
-			participant->scores[0].score,
-			participant->scores[1].score,
-			participant->scores[2].score,
-			participant->scores[3].score,
-			participant->scores[4].score,
+			participant->scores[0][0].score,
+			participant->scores[0][1].score,
+			participant->scores[0][2].score,
+			participant->scores[0][3].score,
+			participant->scores[0][4].score,
 			participant->averageScore);
 	}
 	else {
@@ -702,11 +919,11 @@ void CreateAndSaveCSV(const char *filename, Participant *participant)
 			participant->dateOfBirth.year,
 			(int)participant->gender,
 			participant->competitionType == INDIVIDUAL ? strcat("INDIVIDUAL: ", participant->registeredEvents[0].eventName) : "",
-			participant->scores[0].score,
-			participant->scores[1].score,
-			participant->scores[2].score,
-			participant->scores[3].score,
-			participant->scores[4].score,
+			participant->scores[0][0].score,
+			participant->scores[0][1].score,
+			participant->scores[0][2].score,
+			participant->scores[0][3].score,
+			participant->scores[0][4].score,
 			participant->averageScore);
 
 		// 
